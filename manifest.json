@@ -1,0 +1,14 @@
+{
+  "manifest_version": 2,
+
+  "name": "GitHub Make Better",
+  "description": "Make GitHub Better.",
+  "version": "1.0",
+
+  "content_scripts": [
+    {
+      "matches": ["https://github.com/*/*/pull/*/files"],
+      "js": ["main.js"]
+    }
+  ]
+}
