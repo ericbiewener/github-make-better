@@ -1,19 +1,63 @@
+console.info("Github Make Better")
+
+
+/**
+ * Toggle tests
+ */
+
+let testsAreHidden
+
+function getFileName(fileEl) {
+  return fileEl.querySelector('.file-info a').textContent
+}
+
+function toggleTests() {
+  testsAreHidden = !testsAreHidden
+  const filesContainer = document.getElementById('files')
+  filesContainer.querySelectorAll('.js-details-container').forEach(fileEl => {
+    const fileName = getFileName(fileEl)
+    if (testsAreHidden
+      && (fileName.includes('__tests__') || fileName.includes('__mocks__') || fileName.includes('__fixtures__'))
+    ) {
+      fileEl.style.display = 'none'
+    } else {
+      fileEl.style.display = ''
+    }
+  })
+}
+
+/**
+ * Navigate to next/prev file
+ */
+
 let fileIndex
 let prevEl
 
-document.addEventListener('keydown', ({target, code}) => {
-  if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+function getActiveEl() {
+  return document.getElementById('diff-' + fileIndex)
+}
 
+function findEl(isNext) {
+  const el = fileIndex > -1 ? getActiveEl() : null
+  if (!el || el.style.display !== 'none') return el
+
+  // Keep searching for the next element if the found one is hidden
+  fileIndex += isNext ? 1 : -1
+  return findEl(isNext)
+}
+
+function navigateFile(code) {
   // Cache it so that we can revert in case the new index is illegitimate
-  const prevFileIndex = fileIndex;
-  
-  if (code === 'KeyN') {
+  const prevFileIndex = fileIndex
+  const isNext = code === 'KeyN'
+
+  if (isNext) {
     fileIndex = fileIndex == null ? 0 : fileIndex + 1
-  } else if (code === 'KeyP') {
+  } else {
     fileIndex = fileIndex == null ? 0 : fileIndex - 1
   }
-  
-  const el = fileIndex > -1 ? document.getElementById('diff-' + fileIndex) : null
+
+  const el = findEl(isNext)
   if (!el) {
     fileIndex = prevFileIndex
     return
@@ -23,7 +67,7 @@ document.addEventListener('keydown', ({target, code}) => {
     prevEl.style.boxShadow = ''
     prevEl.style.zIndex = 0
     prevEl.style.background = ''
-}
+  }
   prevEl = el
 
   el.style.boxShadow = '0 5px 50px rgba(0, 0, 0, .7)'
@@ -31,5 +75,55 @@ document.addEventListener('keydown', ({target, code}) => {
   el.style.background = 'white'
   
   const rect = el.getBoundingClientRect()
-  window.scrollTo(0, rect.top - 65) // -65 because of fixed position header
-})
+  window.scrollTo(0, rect.top + window.pageYOffset)
+}
+
+/**
+ * Copy file name
+ */
+
+function copyHandler(e) {
+  e.preventDefault()
+  e.clipboardData.setData("text/plain", clipboardText)
+}
+
+function copyToClipboard(text) {
+  clipboardText = text
+  document.addEventListener("copy", copyHandler)
+  document.execCommand("copy")
+  document.removeEventListener("copy", copyHandler)
+}
+
+function copyFileName() {
+  const el = getActiveEl()
+  if (!el) return
+  copyToClipboard(getFileName(el))
+}
+
+/**
+ * Event listeners
+ * Uses capture phase so that stopPropagation can block all other listeners
+ */
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.metaKey) return
+  
+  const pr = /.*\/.*\/pull\/[0-9]*\/files/
+  if (!pr.test(window.location.pathname)) return // PR page
+
+  switch(e.code) {
+    case 'KeyN':
+    case 'KeyP':
+      e.stopPropagation()
+      return navigateFile(e.code)
+
+    case 'KeyH': {
+      e.stopPropagation()
+      return toggleTests()
+    }
+
+    case 'KeyC': {
+      e.stopPropagation()
+      return copyFileName()
+    }
+  }
+}, true)
