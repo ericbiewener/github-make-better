@@ -100,15 +100,16 @@ function copyFileName() {
   copyToClipboard(getFileName(el))
 }
 
+const pr = /.+\/.+\/pull\/[0-9]+\/files/
+const commit = /.+\/commit[s]?\/.+/
+
 /**
  * Event listeners
  * Uses capture phase so that stopPropagation can block all other listeners
  */
 document.addEventListener('keydown', (e) => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.metaKey) return
-  
-  const pr = /.*\/.*\/pull\/[0-9]*\/files/
-  if (!pr.test(window.location.pathname)) return // PR page
+  if (!pr.test(window.location.pathname) && !commit.test(window.location.pathname)) return // PR page
 
   switch(e.code) {
     case 'KeyN':
