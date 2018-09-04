@@ -100,6 +100,21 @@ function copyFileName() {
   copyToClipboard(getFileName(el))
 }
 
+function copyCorrespondingTests() {
+  let paths = []
+  
+  for (const el of document.getElementsByClassName('file')) {
+    const name = getFileName(el)
+    if (name.includes('__tests__')) continue
+    const lastSlash = name.lastIndexOf('/') + 1
+    const dirname = name.slice(0, lastSlash)
+    const basename = name.slice(lastSlash, name.lastIndexOf('.'))
+    paths.push(`${dirname}__tests__/${basename}.test`)
+  }
+
+  copyToClipboard(`jw ${paths.join(' ')}`)
+}
+
 const pr = /.+\/.+\/pull\/[0-9]+\/files/
 const commit = /.+\/commit[s]?\/.+/
 
@@ -111,20 +126,25 @@ document.addEventListener('keydown', (e) => {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.metaKey) return
   if (!pr.test(window.location.pathname) && !commit.test(window.location.pathname)) return // PR page
 
-  switch(e.code) {
-    case 'KeyN':
-    case 'KeyP':
+  switch(e.key) {
+    case 'n':
+    case 'p':
       e.stopPropagation()
       return navigateFile(e.code)
 
-    case 'KeyH': {
+    case 'h': {
       e.stopPropagation()
       return toggleTests()
     }
 
-    case 'KeyC': {
+    case 'c': {
       e.stopPropagation()
       return copyFileName()
+    }
+
+    case 'a': {
+      e.stopPropagation()
+      return copyCorrespondingTests()
     }
   }
 }, true)
